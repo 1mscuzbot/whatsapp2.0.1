@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'chat_screen.dart';
 import 'login_screen.dart';
+import 'code_showcase_screen.dart';
 import '../services/quote_service.dart';
 
 // -----------------------------------------------------------------------------
@@ -68,8 +69,18 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: const Color(0xFF1A1A1A),
-        // Ações do AppBar: botão de logout
+        // Ações do AppBar: info (showcase) e logout
         actions: [
+          IconButton(
+            icon: const Icon(Icons.code, color: Color(0xFFD32F2F)),
+            tooltip: 'Ver código do projeto',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CodeShowcaseScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFFD32F2F)),
             tooltip: 'Sair',
