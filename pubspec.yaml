@@ -38,6 +38,8 @@ dependencies:
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.0  # <- Armazenamento local: salva dados no dispositivo
+  http: ^1.2.0                # <- Consumo de API REST
 
 dev_dependencies:
   flutter_test:
