@@ -78,7 +78,7 @@ class CodeShowcaseScreen extends StatelessWidget {
         '''
 WhatsApp 2.0.1 é um clone funcional do WhatsApp desenvolvido em Flutter como trabalho da disciplina Programação Mobile.
 
-O app utiliza Firebase para autenticação e armazenamento em nuvem, SharedPreferences para persistência local, e consome uma API REST pública para exibir citações aleatórias.
+O app utiliza Firebase para autenticação e armazenamento em nuvem, SharedPreferences para persistência local, e consome a API REST pública dummyjson.com para exibir citações aleatórias.
 
 Público-alvo: acadêmico — demonstrar integração de múltiplas tecnologias em um app mobile funcional.''',
       ),
@@ -99,7 +99,7 @@ Público-alvo: acadêmico — demonstrar integração de múltiplas tecnologias 
           _itemTecnologia(Icons.fireplace, 'Firebase Auth', 'Autenticação de usuários'),
           _itemTecnologia(Icons.cloud_queue, 'Cloud Firestore', 'Banco NoSQL em tempo real'),
           _itemTecnologia(Icons.storage, 'SharedPreferences', 'Armazenamento local de sessão'),
-          _itemTecnologia(Icons.api, 'HTTP (quotable.io)', 'Consumo de API REST'),
+          _itemTecnologia(Icons.api, 'HTTP (dummyjson.com)', 'Consumo de API REST'),
         ],
       ),
     );
@@ -166,7 +166,7 @@ Login → Home (contatos) → Chat (conversa)''',
           _featureItem('Autenticação', 'Login e cadastro com Firebase Auth'),
           _featureItem('Sessão Persistente', 'SharedPreferences mantém login'),
           _featureItem('Lista de Contatos', 'Contatos simulados com status ONLINE'),
-          _featureItem('API REST', 'Frase aleatória da API quotable.io'),
+          _featureItem('API REST', 'Frase aleatória da API dummyjson.com'),
           _featureItem('Chat em Tempo Real', 'Mensagens sincronizadas via Firestore'),
           _featureItem('Tema Escuro', 'Visual Red & Black formal'),
         ],
@@ -274,11 +274,11 @@ StreamBuilder<QuerySnapshot>(
         '''static Future<String> fetchRandomQuote() async {
   try {
     final response = await http.get(
-      Uri.parse('https://api.quotable.io/random'),
+      Uri.parse('https://dummyjson.com/quotes/random'),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return '\${data['content']}\\n\\n— \${data['author']}';
+      return '\${data['quote']}\\n\\n— \${data['author']}';
     }
   } catch (e) {
     return 'Frase indisponível (sem internet)';

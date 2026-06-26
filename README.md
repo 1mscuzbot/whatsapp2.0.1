@@ -20,7 +20,7 @@ Aplicativo mobile de chat inspirado no WhatsApp, desenvolvido em **Flutter** com
 - Layout escuro no estilo **Red & Black**
 
 ### 3. Frase do Dia (API REST)
-- Consumo da API pública [quotable.io](https://github.com/lukePeavey/quotable)
+- Consumo da API pública [dummyjson.com](https://dummyjson.com/docs/quotes)
 - Toda vez que a Home Screen é carregada, uma frase aleatória é buscada via HTTP
 - Enquanto carrega, exibe um indicador de progresso
 - Se a requisição falhar (sem internet), exibe mensagem amigável
@@ -58,7 +58,7 @@ lib/
 | **Firebase Auth** | Autenticação de usuários |
 | **Cloud Firestore** | Banco de dados NoSQL em tempo real |
 | **SharedPreferences** | Armazenamento local de sessão |
-| **HTTP (dart)** | Consumo de API REST (quotable.io) |
+| **HTTP (dart)** | Consumo de API REST (dummyjson.com) |
 | **Material Design** | Interface visual |
 
 ---
@@ -118,7 +118,7 @@ flutter run
 - Mensagens enviadas vão para o Firestore com `enviadoPorMim: true`
 
 ### `quote_service.dart`
-- Requisição HTTP GET para `https://api.quotable.io/random`
+- Requisição HTTP GET para `https://dummyjson.com/quotes/random`
 - Retorna a frase formatada com autor
 - Tratamento de exceções (sem internet, timeout, etc.)
 - Fácil de estender com outros endpoints
@@ -135,7 +135,7 @@ flutter run
 | Projeto no GitHub | ✅ |
 | Armazenamento local (SharedPreferences) | ✅ |
 | Cloud Firestore (tempo real) | ✅ |
-| Consumo de API REST (quotable.io) | ✅ |
+| Consumo de API REST (dummyjson.com) | ✅ |
 | Firebase Auth | ✅ |
 | Tema escuro personalizado | ✅ |
 
