@@ -36,8 +36,18 @@ Aplicativo mobile de chat inspirado no WhatsApp, desenvolvido em **Flutter** com
 - Balões de mensagem alinhados:
   - **Vermelho (direita):** mensagens enviadas por **Você**
   - **Verde-água (esquerda):** mensagens do **contato**
+- **Sistema de não lidas:** collection `unread` no Firestore → badge vermelho na Home
 - Envio pelo botão de envio ou pressionando **Enter** no teclado
 - Campo de texto com placeholder "DIGITE E APERTE ENTER..."
+
+### 5. Notificações de Mensagens Não Lidas
+- Ao enviar uma mensagem, incrementa `unreadCount` do destinatário no Firestore
+- Ao abrir o chat, zera o contador de não lidas
+- Badge vermelho com o número ao lado do contato na Home Screen
+
+### 6. Case-Insensitive para Emails
+- Todos os emails são convertidos para **lowercase** ao salvar e comparar
+- Evita duplicatas por digitação de maiúsculas/minúsculas (ex.: "User@Email.com" vira "user@email.com")
 
 ---
 
@@ -152,6 +162,8 @@ flutter run
 | ChatId único entre 2 usuários | ✅ |
 | Nome do remetente acima do balão | ✅ |
 | Cores por usuário (Vermelho/Verde) | ✅ |
+| Mensagens não lidas com badge | ✅ |
+| Case-insensitive para emails | ✅ |
 | Tema escuro personalizado | ✅ |
 
 ---

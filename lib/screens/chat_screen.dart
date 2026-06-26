@@ -26,11 +26,25 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _meuEmail = FirebaseAuth.instance.currentUser?.email ?? '';
-    // chatId = emails ordenados alfabeticamente + separador
-    // Assim ambos os usuários olham pro MESMO chat
-    final emails = [_meuEmail, widget.emailContato]..sort();
+
+    _meuEmail =
+        (FirebaseAuth.instance.currentUser?.email ?? '').toLowerCase();
+    final emailContatoLower = widget.emailContato.toLowerCase();
+
+    final emails = [_meuEmail, emailContatoLower]..sort();
     _chatId = emails.join('___');
+
+    _resetarNaoLidas();
+  }
+
+  Future<void> _resetarNaoLidas() async {
+    final myDocId =
+        '${_chatId}_${_meuEmail.replaceAll(RegExp(r'[@.]'), '_')}';
+    await _firestore.collection('unread').doc(myDocId).set({
+      'chatId': _chatId,
+      'email': _meuEmail,
+      'unreadCount': 0,
+    }, SetOptions(merge: true));
   }
 
   Future<void> _enviarMensagem() async {
@@ -49,6 +63,15 @@ class _ChatScreenState extends State<ChatScreen> {
         'timestamp': FieldValue.serverTimestamp(),
         'senderEmail': _meuEmail,
       });
+
+      final recipEmail = widget.emailContato.toLowerCase();
+      final recipDocId =
+          '${_chatId}_${recipEmail.replaceAll(RegExp(r'[@.]'), '_')}';
+      await _firestore.collection('unread').doc(recipDocId).set({
+        'chatId': _chatId,
+        'email': recipEmail,
+        'unreadCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   bool _ehMinhaMensagem(String senderEmail) {
-    return senderEmail == _meuEmail;
+    return senderEmail.toLowerCase() == _meuEmail;
   }
 
   String _nomeRemetente(String senderEmail) {
