@@ -39,13 +39,25 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'WHATSAPP v2.0.1',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'WHATSAPP v2.0.1',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+            Text(
+              _nomeAmigavel(meuEmail),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
         backgroundColor: const Color(0xFF1A1A1A),
         actions: [
@@ -165,11 +177,13 @@ class HomeScreen extends StatelessWidget {
                       );
                     }
 
+                    final seenEmails = <String>{};
                     final usuarios =
                         userSnapshot.data!.docs.where((doc) {
                       final email =
                           (doc['email'] as String? ?? '').toLowerCase();
-                      return email != meuEmail;
+                      if (email == meuEmail) return false;
+                      return seenEmails.add(email);
                     }).toList();
 
                     if (usuarios.isEmpty) {

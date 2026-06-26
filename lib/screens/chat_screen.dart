@@ -228,6 +228,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
 
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            color: const Color(0xFF1A1A1A),
+            child: Text(
+              'Logado como: $_meuEmail',
+              style: const TextStyle(color: Colors.grey, fontSize: 10),
+            ),
+          ),
+
+          Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFF1A1A1A),
             child: Row(
