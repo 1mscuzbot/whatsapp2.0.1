@@ -28,9 +28,11 @@ Aplicativo mobile de chat inspirado no WhatsApp, desenvolvido em **Flutter** com
 ### 4. Chat em Tempo Real (Firebase Firestore)
 - Conversa individual com cada contato
 - Mensagens armazenadas e sincronizadas em tempo real via **Cloud Firestore**
+- Cada mensagem armazena o `senderEmail` para identificar o remetente
+- Nome do remetente exibido **acima** do balão de mensagem
 - Balões de mensagem alinhados:
-  - **Vermelho (direita):** mensagens enviadas pelo usuário
-  - **Cinza (esquerda):** mensagens recebidas
+  - **Vermelho (direita):** mensagens enviadas por **Você**
+  - **Verde-água (esquerda):** mensagens do **contato**
 - Envio pelo botão de envio ou pressionando **Enter** no teclado
 - Campo de texto com placeholder "DIGITE E APERTE ENTER..."
 
@@ -115,7 +117,9 @@ flutter run
 - **StreamBuilder** escuta em tempo real a coleção `chats/{nomeContato}/mensagens`
 - Ordena por `timestamp` decrescente (reverse: true para mostrar do fim pro começo)
 - Campo de texto com `onSubmitted` para enviar ao pressionar Enter
-- Mensagens enviadas vão para o Firestore com `enviadoPorMim: true`
+- Mensagens armazenam `senderEmail` (email do usuário logado)
+- Exibe "Você" (vermelho, direita) ou nome do contato (verde-água, esquerda)
+- Compatível com mensagens antigas que usavam `enviadoPorMim`
 
 ### `quote_service.dart`
 - Requisição HTTP GET para `https://dummyjson.com/quotes/random`

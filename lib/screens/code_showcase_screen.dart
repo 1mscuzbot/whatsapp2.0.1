@@ -163,12 +163,13 @@ Login → Home (contatos) → Chat (conversa)''',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _featureItem('Autenticação', 'Login e cadastro com Firebase Auth'),
-          _featureItem('Sessão Persistente', 'SharedPreferences mantém login'),
-          _featureItem('Lista de Contatos', 'Contatos simulados com status ONLINE'),
-          _featureItem('API REST', 'Frase aleatória da API dummyjson.com'),
-          _featureItem('Chat em Tempo Real', 'Mensagens sincronizadas via Firestore'),
-          _featureItem('Tema Escuro', 'Visual Red & Black formal'),
+  _featureItem('Autenticação', 'Login e cadastro com Firebase Auth'),
+  _featureItem('Sessão Persistente', 'SharedPreferences mantém login'),
+  _featureItem('Lista de Contatos', 'Contatos simulados com status ONLINE'),
+  _featureItem('API REST', 'Frase aleatória da API dummyjson.com'),
+  _featureItem('Chat em Tempo Real', 'Mensagens por email, nome do remetente acima do balão'),
+  _featureItem('Cores por Usuário', 'Vermelho (você) / Verde-água (contato)'),
+  _featureItem('Tema Escuro', 'Visual Red & Black formal'),
         ],
       ),
     );
@@ -252,17 +253,21 @@ StreamBuilder<QuerySnapshot>(
     .snapshots(),
   builder: (context, snapshot) {
     final mensagens = snapshot.data!.docs;
-    // Constrói lista de balões de chat
     return ListView.builder(
       reverse: true,
       itemCount: mensagens.length,
       itemBuilder: (context, index) {
         final dados = mensagens[index].data() as Map;
-        return Align(
-          alignment: souEu
-            ? Alignment.centerRight
-            : Alignment.centerLeft,
-          child: Container(/* balão */),
+        final souEu = dados['senderEmail'] == meuEmail;
+        // "Você" (direita, vermelho) ou contato (esquerda, verde)
+        return Column(
+          children: [
+            Text(_nomeRemetente(dados)), // Nome acima
+            Align(
+              alignment: souEu ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(/* balão */),
+            ),
+          ],
         );
       },
     );
