@@ -1,29 +1,15 @@
-// =============================================================================
-// ARQUIVO: home_screen.dart
-// OBJETIVO: Tela principal que lista os contatos e exibe uma frase aleatória
-//           vinda de uma API REST pública (requisito do PDF).
-// =============================================================================
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'chat_screen.dart';
 import 'login_screen.dart';
 import 'code_showcase_screen.dart';
 import '../services/quote_service.dart';
 
-// -----------------------------------------------------------------------------
-// PASSO 7: HomeScreen — tela com a lista de conversas
-// -----------------------------------------------------------------------------
-// StatelessWidget porque a lista é fixa (contatos pré-definidos).
-// O estado da frase da API é gerenciado internamente na build (FutureBuilder).
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // ---------------------------------------------------------------------------
-  // PASSO 7.1: _deslogar()
-  // Limpa SharedPreferences e retorna à tela de login.
-  // ---------------------------------------------------------------------------
   Future<void> _deslogar(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     final prefs = await SharedPreferences.getInstance();
@@ -37,26 +23,13 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
+  String _nomeAmigavel(String email) {
+    return email.split('@').first;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Lista de contatos simulados (dados hardcoded para demonstração)
-    final contatos = [
-      {
-        'nome': 'Professor da Disciplina',
-        'msg': 'Projeto homologado na versão 2.0.1.',
-        'foto': '👨‍🏫',
-      },
-      {
-        'nome': 'Parceiro do Projeto',
-        'msg': 'O visual Red & Black ficou sinistro!',
-        'foto': '🚀',
-      },
-      {
-        'nome': 'Diretoria de TI',
-        'msg': 'Reunião de deploy agendada.',
-        'foto': '💼',
-      },
-    ];
+    final meuEmail = FirebaseAuth.instance.currentUser?.email ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +42,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         backgroundColor: const Color(0xFF1A1A1A),
-        // Ações do AppBar: info (showcase) e logout
         actions: [
           IconButton(
             icon: const Icon(Icons.code, color: Color(0xFFD32F2F)),
@@ -87,7 +59,6 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => _deslogar(context),
           ),
         ],
-        // Linha vermelha estilizada abaixo do AppBar
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(2),
           child: Divider(color: Color(0xFFD32F2F), height: 2),
@@ -95,20 +66,14 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // -------------------------------------------------------------------
-          // PASSO 8: Consumo de API REST
-          // Exibe uma frase aleatória vinda da API pública quotable.io
-          // -------------------------------------------------------------------
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             color: const Color(0xFF1A1A1A),
             child: FutureBuilder<String>(
-              // Chama o método que faz a requisição HTTP
               future: QuoteService.fetchRandomQuote(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Enquanto a API não responde, mostra um loading
                   return const Row(
                     children: [
                       SizedBox(
@@ -133,7 +98,6 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.grey, fontSize: 12),
                   );
                 }
-                // Frase carregada com sucesso!
                 return Text(
                   snapshot.data!,
                   style: const TextStyle(
@@ -147,64 +111,113 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // -------------------------------------------------------------------
-          // PASSO 9: Lista de contatos (ListView.builder)
-          // -------------------------------------------------------------------
-          Expanded(
-            child: ListView.builder(
-              itemCount: contatos.length,
-              itemBuilder: (context, index) {
-                final item = contatos[index];
-                return Container(
-                  // Borda inferior sutil para separar os itens
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFF222222)),
-                    ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.people, color: Color(0xFFD32F2F), size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'CONTATOS DISPONÍVEIS',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: ListTile(
-                    // Avatar com emoji
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF2A2A2A),
-                      child: Text(
-                        item['foto']!,
-                        style: const TextStyle(fontSize: 20),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('usuarios')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFD32F2F),
+                    ),
+                  );
+                }
+
+                final usuarios = snapshot.data!.docs.where((doc) {
+                  final email = doc['email'] as String? ?? '';
+                  return email != meuEmail;
+                }).toList();
+
+                if (usuarios.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Nenhum outro usuário cadastrado.\nCompartilhe o app com alguém!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: usuarios.length,
+                  itemBuilder: (context, index) {
+                    final dados = usuarios[index].data()
+                        as Map<String, dynamic>;
+                    final email = dados['email'] as String? ?? '';
+                    final nome = _nomeAmigavel(email);
+
+                    return Container(
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Color(0xFF222222)),
+                        ),
                       ),
-                    ),
-                    // Nome do contato
-                    title: Text(
-                      item['nome']!,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    // Última mensagem
-                    subtitle: Text(
-                      item['msg']!,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    // Status "ONLINE"
-                    trailing: const Text(
-                      'ONLINE',
-                      style: TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    // Ao clicar, navega para a tela de chat
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatScreen(
-                            nomeContato: item['nome']!,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFF2A2A2A),
+                          child: Text(
+                            nome[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Color(0xFFD32F2F),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                        title: Text(
+                          nome,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        subtitle: Text(
+                          email,
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        trailing: const Text(
+                          'ONLINE',
+                          style: TextStyle(
+                            color: Color(0xFFD32F2F),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatScreen(
+                                emailContato: email,
+                                nomeContato: nome,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 );
               },
             ),

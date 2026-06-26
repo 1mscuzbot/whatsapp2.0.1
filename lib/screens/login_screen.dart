@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 
@@ -27,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Instância do Firebase Auth (singleton)
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
   // Flag para alternar entre modo LOGIN e CADASTRO
   bool _modoCadastro = false;
@@ -102,6 +104,13 @@ class _LoginScreenState extends State<LoginScreen> {
       // PASSO 4.5: Se chegou aqui, deu certo!
       // Salva o e-mail localmente e navega para Home
       await _salvarLogin(email);
+
+      // Salva/atualiza o usuário na coleção 'usuarios' do Firestore
+      // para que outros usuários possam encontrá-lo no chat
+      await _firestore.collection('usuarios').doc(email).set({
+        'email': email,
+        'ultimoLogin': FieldValue.serverTimestamp(),
+      });
 
       if (mounted) {
         Navigator.pushReplacement(

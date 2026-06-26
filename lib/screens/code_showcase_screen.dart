@@ -141,14 +141,14 @@ lib/
 ├── main.dart              ← Ponto de entrada
 ├── firebase_options.dart  ← Config Firebase
 ├── screens/               ← Telas do app
-│   ├── login_screen.dart  ← Login/Cadastro
-│   ├── home_screen.dart   ← Contatos + API
-│   └── chat_screen.dart   ← Chat Firestore
+│   ├── login_screen.dart  ← Login/Cadastro + salva user no Firestore
+│   ├── home_screen.dart   ← Lista usuários REAIS do Firestore
+│   └── chat_screen.dart   ← Chat com chatId único (2 emails)
 └── services/              ← Serviços
     └── quote_service.dart ← API REST
 
 Fluxo de navegação:
-Login → Home (contatos) → Chat (conversa)''',
+Login → Home (usuários do Firebase) → Chat (chatId único)''',
       ),
     );
   }
@@ -165,7 +165,7 @@ Login → Home (contatos) → Chat (conversa)''',
         children: [
   _featureItem('Autenticação', 'Login e cadastro com Firebase Auth'),
   _featureItem('Sessão Persistente', 'SharedPreferences mantém login'),
-  _featureItem('Lista de Contatos', 'Contatos simulados com status ONLINE'),
+      _featureItem('Contatos Reais', 'Usuários do Firebase Auth listados do Firestore'),
   _featureItem('API REST', 'Frase aleatória da API dummyjson.com'),
   _featureItem('Chat em Tempo Real', 'Mensagens por email, nome do remetente acima do balão'),
   _featureItem('Cores por Usuário', 'Vermelho (você) / Verde-água (contato)'),
@@ -215,10 +215,8 @@ Login → Home (contatos) → Chat (conversa)''',
 }''',
       ),
       CodeSnippet(
-        'login_screen.dart — autenticar',
+        'login_screen.dart — autenticar + salvar no Firestore',
         '''Future<void> _autenticar() async {
-  // Se for cadastro, cria usuário
-  // Se for login, autentica existente
   if (_modoCadastro) {
     await _auth.createUserWithEmailAndPassword(
       email: email, password: senha);
@@ -226,29 +224,39 @@ Login → Home (contatos) → Chat (conversa)''',
     await _auth.signInWithEmailAndPassword(
       email: email, password: senha);
   }
-  // Salva sessão e navega para Home
   await _salvarLogin(email);
+  // Salva usuario no Firestore pra aparecer pra outros
+  await _firestore.collection('usuarios').doc(email).set({
+    'email': email,
+    'ultimoLogin': FieldValue.serverTimestamp(),
+  });
 }''',
       ),
       CodeSnippet(
-        'home_screen.dart — API REST',
-        '''// FutureBuilder consome API pública
-FutureBuilder<String>(
-  future: QuoteService.fetchRandomQuote(),
+        'home_screen.dart — contatos do Firestore + API',
+        '''// StreamBuilder busca usuarios do Firebase em tempo real
+StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance
+    .collection('usuarios').snapshots(),
   builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting)
-      return CircularProgressIndicator();
-    // Exibe a frase carregada
-    return Text(snapshot.data!);
+    final usuarios = snapshot.data!.docs
+      .where((doc) => doc['email'] != meuEmail);
+    return ListView.builder(
+      itemCount: usuarios.length, ...
+    );
   },
 );''',
       ),
       CodeSnippet(
-        'chat_screen.dart — Firestore',
-        '''// Stream em tempo real do Firestore
+        'chat_screen.dart — Firestore com chatId único',
+        '''// chatId = emails ordenados pra ambos verem o mesmo chat
+final emails = [meuEmail, emailContato]..sort();
+final chatId = emails.join('___');
+// Stream em tempo real
 StreamBuilder<QuerySnapshot>(
   stream: _firestore
-    .collection('chats/\$contato/mensagens')
+    .collection('chats').doc(chatId)
+    .collection('mensagens')
     .orderBy('timestamp', descending: true)
     .snapshots(),
   builder: (context, snapshot) {
@@ -259,16 +267,8 @@ StreamBuilder<QuerySnapshot>(
       itemBuilder: (context, index) {
         final dados = mensagens[index].data() as Map;
         final souEu = dados['senderEmail'] == meuEmail;
-        // "Você" (direita, vermelho) ou contato (esquerda, verde)
-        return Column(
-          children: [
-            Text(_nomeRemetente(dados)), // Nome acima
-            Align(
-              alignment: souEu ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(/* balão */),
-            ),
-          ],
-        );
+        // "Você" (vermelho/direita) ou contato (verde/esquerda)
+        return Column(...);
       },
     );
   },

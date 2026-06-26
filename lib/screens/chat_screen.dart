@@ -3,9 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatScreen extends StatefulWidget {
+  final String emailContato;
   final String nomeContato;
 
-  const ChatScreen({super.key, required this.nomeContato});
+  const ChatScreen({
+    super.key,
+    required this.emailContato,
+    required this.nomeContato,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -15,12 +20,17 @@ class _ChatScreenState extends State<ChatScreen> {
   final _msgController = TextEditingController();
   final _firestore = FirebaseFirestore.instance;
 
-  String? _meuEmail;
+  late final String _chatId;
+  late final String _meuEmail;
 
   @override
   void initState() {
     super.initState();
-    _meuEmail = FirebaseAuth.instance.currentUser?.email;
+    _meuEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    // chatId = emails ordenados alfabeticamente + separador
+    // Assim ambos os usuários olham pro MESMO chat
+    final emails = [_meuEmail, widget.emailContato]..sort();
+    _chatId = emails.join('___');
   }
 
   Future<void> _enviarMensagem() async {
@@ -31,11 +41,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       await _firestore
-          .collection('chats/${widget.nomeContato}/mensagens')
+          .collection('chats')
+          .doc(_chatId)
+          .collection('mensagens')
           .add({
         'texto': texto,
         'timestamp': FieldValue.serverTimestamp(),
-        'senderEmail': _meuEmail ?? 'desconhecido@email.com',
+        'senderEmail': _meuEmail,
       });
     } catch (e) {
       if (mounted) {
@@ -49,15 +61,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  bool _ehMinhaMensagem(Map<String, dynamic> dados) {
-    if (dados.containsKey('senderEmail')) {
-      return dados['senderEmail'] == _meuEmail;
-    }
-    return dados['enviadoPorMim'] ?? false;
+  bool _ehMinhaMensagem(String senderEmail) {
+    return senderEmail == _meuEmail;
   }
 
-  String _nomeRemetente(Map<String, dynamic> dados) {
-    if (_ehMinhaMensagem(dados)) return 'Você';
+  String _nomeRemetente(String senderEmail) {
+    if (_ehMinhaMensagem(senderEmail)) return 'Você';
     return widget.nomeContato;
   }
 
@@ -72,13 +81,25 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
       appBar: AppBar(
-        title: Text(
-          widget.nomeContato.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            letterSpacing: 1,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.nomeContato.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                letterSpacing: 1,
+              ),
+            ),
+            Text(
+              widget.emailContato,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
         backgroundColor: const Color(0xFF1A1A1A),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -92,7 +113,9 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
-                  .collection('chats/${widget.nomeContato}/mensagens')
+                  .collection('chats')
+                  .doc(_chatId)
+                  .collection('mensagens')
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -123,8 +146,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     final dados =
                         mensagens[index].data() as Map<String, dynamic>;
-                    final souEu = _ehMinhaMensagem(dados);
-                    final nome = _nomeRemetente(dados);
+                    final senderEmail =
+                        dados['senderEmail'] as String? ?? '';
+                    final souEu = _ehMinhaMensagem(senderEmail);
+                    final nome = _nomeRemetente(senderEmail);
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(
@@ -163,8 +188,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 dados['texto'] ?? '',
                                 style: TextStyle(
                                   fontSize: 15,
-                                  color:
-                                      souEu ? Colors.white : const Color(0xFFE0E0E0),
+                                  color: souEu
+                                      ? Colors.white
+                                      : const Color(0xFFE0E0E0),
                                 ),
                               ),
                             ),

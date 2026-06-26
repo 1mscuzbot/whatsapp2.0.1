@@ -15,7 +15,9 @@ Aplicativo mobile de chat inspirado no WhatsApp, desenvolvido em **Flutter** com
 - **Logout** pelo botão na tela principal
 
 ### 2. Lista de Contatos (Home Screen)
-- Exibição de contatos simulados com avatar (emoji), nome e última mensagem
+- Contatos são usuários **reais cadastrados no Firebase**
+- Busca automática da coleção `usuarios` no Firestore
+- Exibe nome amigável (parte antes do `@`) e email completo
 - Status **ONLINE** ao lado de cada contato
 - Layout escuro no estilo **Red & Black**
 
@@ -26,8 +28,9 @@ Aplicativo mobile de chat inspirado no WhatsApp, desenvolvido em **Flutter** com
 - Se a requisição falhar (sem internet), exibe mensagem amigável
 
 ### 4. Chat em Tempo Real (Firebase Firestore)
-- Conversa individual com cada contato
-- Mensagens armazenadas e sincronizadas em tempo real via **Cloud Firestore**
+- Conversa individual com cada contato (usuário real do Firebase)
+- `chatId` único gerado pela concatenação dos dois emails em ordem alfabética
+- Mensagens armazenadas em `chats/{chatId}/mensagens`
 - Cada mensagem armazena o `senderEmail` para identificar o remetente
 - Nome do remetente exibido **acima** do balão de mensagem
 - Balões de mensagem alinhados:
@@ -45,9 +48,10 @@ lib/
 ├── main.dart                  # Ponto de entrada, inicialização do Firebase
 ├── firebase_options.dart      # Configuração automática do Firebase
 ├── screens/
-│   ├── login_screen.dart      # Tela de login/cadastro
-│   ├── home_screen.dart       # Lista de contatos + frase da API
-│   └── chat_screen.dart       # Chat em tempo real com Firestore
+│   ├── login_screen.dart      # Login/cadastro + salva user no Firestore
+│   ├── home_screen.dart       # Lista usuários REAIS + frase da API
+│   ├── chat_screen.dart       # Chat com chatId único (2 emails)
+│   └── code_showcase_screen.dart # Tela didática p/ apresentação
 └── services/
     └── quote_service.dart     # Serviço de consumo da API REST
 ```
@@ -105,21 +109,24 @@ flutter run
 - `initState()` verifica se há sessão salva no SharedPreferences
 - Botão alterna entre modo **LOGIN** e **CADASTRO**
 - Tratamento de erros do Firebase Auth (e-mail já cadastrado, senha fraca, etc.)
-- Ao autenticar, salva o e-mail no SharedPreferences e navega para Home
+- Ao autenticar, salva o e-mail no SharedPreferences e **também salva o usuário na coleção `usuarios` do Firestore** (para aparecer na lista de contatos de outros usuários)
 
 ### `home_screen.dart`
-- Exibe lista de contatos (dados fixos para demonstração)
+- **StreamBuilder** busca em tempo real a coleção `usuarios` do Firestore
+- Filtra o próprio usuário logado (não mostra ele mesmo na lista)
+- Mostra nome amigável (parte antes do `@`) e email completo de cada usuário
 - Before da lista: **FutureBuilder** que chama `QuoteService.fetchRandomQuote()`
 - Botão de **logout** no AppBar limpa SharedPreferences e retorna ao login
-- Cada contato navega para `ChatScreen` com o nome do contato
+- Cada contato navega para `ChatScreen` com o email e nome do contato
 
 ### `chat_screen.dart`
-- **StreamBuilder** escuta em tempo real a coleção `chats/{nomeContato}/mensagens`
+- Gera um `chatId` único ordenando os dois emails e concatenando com `___`
+- Ambos os usuários olham para o **mesmo** caminho: `chats/{chatId}/mensagens`
+- **StreamBuilder** escuta em tempo real as mensagens
 - Ordena por `timestamp` decrescente (reverse: true para mostrar do fim pro começo)
 - Campo de texto com `onSubmitted` para enviar ao pressionar Enter
-- Mensagens armazenam `senderEmail` (email do usuário logado)
-- Exibe "Você" (vermelho, direita) ou nome do contato (verde-água, esquerda)
-- Compatível com mensagens antigas que usavam `enviadoPorMim`
+- Mensagens armazenam `senderEmail` (email do remetente)
+- Exibe "Você" (vermelho, direita) ou nome do contato (verde-água, esquerda) acima do balão
 
 ### `quote_service.dart`
 - Requisição HTTP GET para `https://dummyjson.com/quotes/random`
@@ -135,12 +142,16 @@ flutter run
 |---|---|
 | App funcional sem falhas críticas | ✅ |
 | Navegação entre telas (Login → Home → Chat) | ✅ |
-| 3 telas implementadas | ✅ |
+| 3 telas implementadas (4 com CodeShowcase) | ✅ |
 | Projeto no GitHub | ✅ |
 | Armazenamento local (SharedPreferences) | ✅ |
 | Cloud Firestore (tempo real) | ✅ |
 | Consumo de API REST (dummyjson.com) | ✅ |
 | Firebase Auth | ✅ |
+| Contatos reais do Firebase (não hardcoded) | ✅ |
+| ChatId único entre 2 usuários | ✅ |
+| Nome do remetente acima do balão | ✅ |
+| Cores por usuário (Vermelho/Verde) | ✅ |
 | Tema escuro personalizado | ✅ |
 
 ---
